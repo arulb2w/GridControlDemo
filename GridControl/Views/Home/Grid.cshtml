@@ -1,0 +1,113 @@
+﻿@{
+    ViewBag.Title = "Grid Control";
+}
+<main aria-labelledby="title">
+    <h2 id="title">@ViewBag.Title.</h2>
+    <h3>@ViewBag.Message</h3>
+
+    <style>
+        .padding {
+            padding: 10px;
+        }
+
+        #Div_wrapper {
+            overflow: hidden;
+        }
+    </style>
+    <script src="~/Scripts/jquery-3.7.0.min.js"></script>
+    <section class="content">
+        <div class="box box-primary">
+            <div class="box-header with-border">
+                <h3 class="box-title">Attendance Detail</h3>
+                <div class="box-tools pull-right">
+                </div>
+            </div>
+            <!-- /.box-header -->
+            <div class="box-body">
+                <div id="Div_wrapper" class="dataTables_wrapper dt-bootstrap">
+                    <div class="row">
+                        <div class="box-body">
+                            <div id="Div_wrapper" class="dataTables_wrapper dt-bootstrap">
+                              @*  @{ Html.RenderPartial("~/Views/TimeOffice/_EmpSearch.cshtml"); }*@
+                            </div>
+                        </div>
+                    </div>
+                    <div class="box-body table-responsive left25padding" id="tblAttendanceDetail">
+
+                    </div>                   
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+    $('#btnSearch').click(function () {
+        var Panel = "AttendanceDetail";
+        $.ajax({
+            url: window.location.origin + "/TimeOffice/Get" + Panel.replace("-", "_"),
+            data: JSON.stringify({ "strCode": $('#txtEmpId').val(), "strMnt": $('#SltMonth').val(), "strYear": $('#txtYear').val() }),
+            dataType: "json",
+            contentType: "application/json",
+            type: "POST",
+            success: function (jsonResult) {
+                debugger;
+                $app.CheckSessionExpired(jsonResult);
+                switch (jsonResult.Status) {
+                    case true:
+                        var gridObject = [];
+                        var results = JSON.parse(jsonResult.result);
+                        if (results.length > 0) {
+                            var columnsIn = results[0];
+                            for (var key in columnsIn) {
+                                if ($(window).width() < 600) {
+                                    gridObject.push({
+                                        'GridColHeader': key,
+                                        'GridcssClass': key.indexOf('_TB') > 0 ? 'txtBoxColumn' : key == 'Action' ? 'actionColumn' : key == 'ID' ? 'nodisp' : key == 'Select' ? 'selectColumn' : (key == 'Empid' || key == 'EmployeeName') ? 'nodisp' : ''  //Iproud
+                                    });
+                                }
+                                else {
+                                    gridObject.push({
+                                        'GridColHeader': key,
+                                        'GridcssClass': key.indexOf('_TB') > 0 ? 'txtBoxColumn' : key == 'Action' ? 'actionColumn' : key == 'ID' ? 'nodisp' : key == 'Select' ? 'selectColumn' : key == 'EligibleAccess' ? 'nodisp' : ''
+                                    });
+
+                                }
+                            }
+                            $masterGrid.gridObject = gridObject;
+                            $masterGrid.gridData = JSON.parse(jsonResult.result);
+                            var modelContent = $masterGrid.createTable($masterGrid.gridObject, Panel);
+                            $('#tbl' + Panel).html('');
+                            $('#tbl' + Panel).html(modelContent);
+                            $masterGrid.LoadMastergrid($masterGrid.gridObject);
+                        } else {
+                            $('#tbl' + Panel).html('');
+                            $('#tbl' + Panel).html('<i>No Records</i>');
+                        }
+                        break;
+                    case false:
+                        $app.showAlert("Error in Saving", 4);
+                        break;
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+
+                console.log(errorThrown);
+                $(".overlay").hide();
+            },
+            complete: function () {
+                //  $('#Progress').modal('toggle');  //Hide Progress
+                if ($(window).width() < 600) {
+                    $('.dataTables_filter').addClass('nodisp');
+                    $('.dt-buttons').addClass('nodisp');  // Iproud
+
+                } else {
+                    $('.dataTables_filter').removeClass('nodisp');
+                }
+                $(".overlay").hide();
+            }
+        });
+    });
+
+
+    </script>
+</main>
